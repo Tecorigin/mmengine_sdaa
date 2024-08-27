@@ -5,6 +5,11 @@ from typing import Optional
 import torch
 
 try:
+    import torch_sdaa
+except Exception:
+    pass
+
+try:
     import torch_npu  # noqa: F401
     import torch_npu.npu.utils as npu_utils
 
@@ -35,6 +40,29 @@ except Exception:
     IS_MUSA_AVAILABLE = False
 
 
+
+def get_max_sdaa_memory(device: Optional[torch.device] = None) -> int:
+    """Returns the maximum GPU memory occupied by tensors in megabytes (MB) for
+    a given device. By default, this returns the peak allocated memory since
+    the beginning of this program.
+
+    Args:
+        device (torch.device, optional): selected device. Returns
+            statistic for the current device, given by
+            :func:`~torch.cuda.current_device`, if ``device`` is None.
+            Defaults to None.
+
+    Returns:
+        int: The maximum GPU memory occupied by tensors in megabytes
+        for a given device.
+    """
+    mem = torch.sdaa.max_memory_allocated(device=device)
+    mem_mb = torch.tensor([int(mem) // (1024 * 1024)],
+                          dtype=torch.int,
+                          device=device)
+    torch.sdaa.reset_peak_memory_stats()
+    return int(mem_mb.item())
+
 def get_max_cuda_memory(device: Optional[torch.device] = None) -> int:
     """Returns the maximum GPU memory occupied by tensors in megabytes (MB) for
     a given device. By default, this returns the peak allocated memory since
@@ -62,6 +90,15 @@ def is_cuda_available() -> bool:
     """Returns True if cuda devices exist."""
     return torch.cuda.is_available()
 
+
+def is_sdaa_available() -> bool:
+    '''Return True if sdaa pytorch exist.'''
+    try:
+        import torch_sdaa
+        import torch
+        return torch.sdaa.is_available()
+    except Exception:
+        return False
 
 def is_npu_available() -> bool:
     """Returns True if Ascend PyTorch and npu devices exist."""
@@ -133,12 +170,13 @@ elif is_dipu_available():
     DEVICE = 'dipu'
 elif is_musa_available():
     DEVICE = 'musa'
-
+elif is_sdaa_available():
+    DEVICE = 'sdaa'
 
 def get_device() -> str:
     """Returns the currently existing device type.
 
     Returns:
-        str: cuda | npu | mlu | mps | musa | cpu.
+        str: cuda | npu | mlu | mps | musa | cpu | sdaa .
     """
     return DEVICE

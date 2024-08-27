@@ -6,7 +6,7 @@ from typing import Optional
 import torch
 
 from mmengine.device import (get_device, is_cuda_available, is_mlu_available,
-                             is_npu_available)
+                             is_npu_available, is_sdaa_available)
 from mmengine.logging import print_log
 from mmengine.utils import digit_version
 from mmengine.utils.dl_utils import TORCH_VERSION
@@ -98,6 +98,10 @@ def autocast(device_type: Optional[str] = None,
         elif is_cuda_available():
             with torch.cuda.amp.autocast(enabled=enabled):
                 yield
+        elif is_sdaa_available():
+            import torch_sdaa
+            with torch_sdaa.amp.autocast(enabled=enabled):
+                yield
         else:
             if not enabled:
                 yield
@@ -135,6 +139,11 @@ def autocast(device_type: Optional[str] = None,
 
         elif device_type == 'npu':
             pass
+        elif device_type == 'sdaa':
+            import torch_sdaa
+            with torch_sdaa.amp.autocast(enabled=enabled):
+                yield
+                return
         elif device_type == 'musa':
             if dtype is None:
                 dtype = torch.get_autocast_gpu_dtype()

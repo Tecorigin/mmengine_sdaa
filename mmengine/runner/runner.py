@@ -288,9 +288,13 @@ class Runner:
         randomness: Dict = dict(seed=None),
         experiment_name: Optional[str] = None,
         cfg: Optional[ConfigType] = None,
+        device=None,
     ):
         self._work_dir = osp.abspath(work_dir)
         mmengine.mkdir_or_exist(self._work_dir)
+        self.device = device if device is not None else get_device()
+        if device is not None:
+            os.environ['ENGINE_DEVICE'] = device
 
         # recursively copy the `cfg` because `self.cfg` will be modified
         # everywhere.
@@ -487,6 +491,7 @@ class Runner:
             randomness=cfg.get('randomness', dict(seed=None)),
             experiment_name=cfg.get('experiment_name'),
             cfg=cfg,
+            device=cfg.get('device')
         )
 
         return runner
@@ -672,6 +677,8 @@ class Runner:
         # init distributed env first, since logger depends on the dist info.
         if self.distributed and not is_distributed():
             dist_cfg: dict = env_cfg.get('dist_cfg', {})
+            if 'sdaa' in self.device:
+                dist_cfg['backend'] = 'tccl'
             init_dist(self.launcher, **dist_cfg)
 
         self._rank, self._world_size = get_dist_info()
@@ -878,17 +885,17 @@ class Runner:
                 'Distributed training is not used, all SyncBatchNorm (SyncBN) '
                 'layers in the model will be automatically reverted to '
                 'BatchNormXd layers if they are used.')
-            model = revert_sync_batchnorm(model)
+            # model = revert_sync_batchnorm(model)
             return model  # type: ignore
-        else:
-            sync_bn = self.cfg.get('sync_bn', None)
-            if sync_bn is not None:
-                try:
-                    model = convert_sync_batchnorm(model, sync_bn)
-                except ValueError as e:
-                    self.logger.error('cfg.sync_bn should be "torch" or '
-                                      f'"mmcv", but got {sync_bn}')
-                    raise e
+        # else:
+        #     sync_bn = self.cfg.get('sync_bn', None)
+        #     if sync_bn is not None:
+        #         try:
+        #             model = convert_sync_batchnorm(model, sync_bn)
+        #         except ValueError as e:
+        #             self.logger.error('cfg.sync_bn should be "torch" or '
+        #                               f'"mmcv", but got {sync_bn}')
+        #             raise e
         if model_wrapper_cfg is None:
             find_unused_parameters = self.cfg.get('find_unused_parameters',
                                                   False)

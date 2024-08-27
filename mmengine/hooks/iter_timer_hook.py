@@ -7,6 +7,30 @@ from .hook import Hook
 
 DATA_BATCH = Optional[Union[dict, tuple, list]]
 
+try:
+    from tcap_dllogger import Logger, StdOutBackend, JSONStreamBackend, Verbosity
+    from pathlib import Path
+    tmp_dir = str(Path(__file__).resolve().parents[3] / 'tmp/')
+    import os
+    os.makedirs(tmp_dir, exist_ok=True)
+    dllogger = Logger(
+    [
+        StdOutBackend(Verbosity.DEFAULT),
+        # JSONStreamBackend(Verbosity.VERBOSE, os.path.join(tmp_dir, 'train_log.json')),
+    ]
+    )
+    dllogger.metadata("train.loss", {"unit": "", "GOAL": "MINIMIZE", "STAGE": "TRAIN"})
+    dllogger.metadata(
+        "train.ips",{"unit": "imgs/s", "format": ":.3f", "GOAL": "MAXIMIZE", "STAGE": "TRAIN"}
+        
+    )
+    dllogger.metadata("train.total", {"unit": "s", "GOAL": "MINIMIZE", "STAGE": "TRAIN"})
+    dllogger.metadata("train.compute_time", {"unit": "s", "GOAL": "MINIMIZE", "STAGE": "TRAIN"})
+    dllogger.metadata("train.data_time", {"unit": "s", "GOAL": "MINIMIZE", "STAGE": "TRAIN"})
+    
+except Exception:
+    dllogger=None
+    print('tcap_dllogger not install!')
 
 @HOOKS.register_module()
 class IterTimerHook(Hook):
@@ -85,6 +109,29 @@ class IterTimerHook(Hook):
         # Update iteration time in `runner.message_hub`.
         message_hub = runner.message_hub
         message_hub.update_scalar(f'{mode}/time', time.time() - self.t)
+        if mode=='train':
+            
+            # print('self.data_time',self.data_time)
+            # ips = runner._train_dataloader['batch_size']/((time.time() - self.t) - self.data_time)
+            self.total_time = time.time() - self.t
+            ips = runner._train_dataloader['batch_size']/self.total_time 
+            # print('bs',runner._train_dataloader['batch_size'])
+            if dllogger is not None:
+                dllogger.log(
+                    step = (runner.epoch, runner.iter),
+                    data = {"rank":runner.rank,
+                            "train.loss":outputs['loss'].item(),
+                            "train.ips":ips,
+                            "train.total_time": self.total_time,
+                            },
+                    verbosity=Verbosity.DEFAULT,
+                )
+        elif mode == 'val':
+            # ips = runner._val_dataloader['batch_size']/((time.time() - self.t) - self.data_time)
+            ips = runner._val_dataloader['batch_size']/((time.time() - self.t))
+        elif mode == 'test':
+            # ips = runner._val_dataloader['batch_size']/((time.time() - self.t) - self.data_time)
+            ips = runner._val_dataloader['batch_size']/((time.time() - self.t) )
         self.t = time.time()
         iter_time = message_hub.get_scalar(f'{mode}/time')
         if mode == 'train':

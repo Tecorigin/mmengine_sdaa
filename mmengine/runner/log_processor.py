@@ -10,7 +10,7 @@ import numpy as np
 import torch
 
 from mmengine.device import (get_max_cuda_memory, get_max_musa_memory,
-                             is_cuda_available, is_musa_available)
+                             is_cuda_available, is_musa_available, is_sdaa_available, get_max_sdaa_memory)
 from mmengine.registry import LOG_PROCESSORS
 
 
@@ -229,7 +229,7 @@ class LogProcessor:
 
         # If cuda/musa is available,
         # the max memory occupied should be calculated.
-        if is_cuda_available() or is_musa_available():
+        if is_cuda_available() or is_musa_available() or is_sdaa_available():
             max_memory = self._get_max_memory(runner)
             log_str += f'memory: {max_memory}  '
             tag['memory'] = max_memory
@@ -502,7 +502,9 @@ class LogProcessor:
 
         device = getattr(runner.model, 'output_device', None)
 
-        if is_musa_available():
+        if is_sdaa_available():
+            return get_max_sdaa_memory(device)
+        elif is_musa_available():
             return get_max_musa_memory(device)
         return get_max_cuda_memory(device)
 

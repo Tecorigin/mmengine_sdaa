@@ -12,7 +12,7 @@ from torch import Tensor
 from torch import distributed as torch_dist
 from torch.distributed import ProcessGroup
 from mmengine.device import (is_mlu_available, is_npu_available,
-                             is_musa_available)
+                             is_musa_available,is_sdaa_available)
 
 from collections.abc import Iterable, Mapping
 
@@ -118,6 +118,11 @@ def _init_dist_pytorch(backend, init_backend='torch', **kwargs) -> None:
             rank=rank,
             world_size=int(os.environ['WORLD_SIZE']),
             **kwargs)
+    elif is_sdaa_available():
+        import torch_sdaa
+        num_gpus = torch_sdaa.core.sdaa_model.device_count()
+        torch_sdaa.core.sdaa_model.set_device(rank % num_gpus)
+        torch_dist.init_process_group(backend='tccl', **kwargs)
     elif is_musa_available():
         import torch_musa  # noqa: F401
         torch.musa.set_device(rank)
@@ -539,6 +544,9 @@ def get_comm_device(group: Optional[ProcessGroup] = None) -> torch.device:
     elif backend == 'mccl':
         import torch_musa
         return torch.device('musa', torch_musa.current_device())
+    elif backend == 'tccl':
+        import torch_sdaa
+        return torch.device('sdaa', torch_sdaa.core.sdaa_model.current_device())
     else:
         # GLOO and MPI backends use cpu device by default
         return torch.device('cpu')

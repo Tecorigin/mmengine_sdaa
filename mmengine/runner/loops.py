@@ -15,7 +15,11 @@ from mmengine.utils import is_list_of
 from .amp import autocast
 from .base_loop import BaseLoop
 from .utils import calc_dynamic_intervals
-
+import os
+try:
+    import torch_sdaa
+except:
+    pass
 
 @LOOPS.register_module()
 class EpochBasedTrainLoop(BaseLoop):
@@ -111,8 +115,30 @@ class EpochBasedTrainLoop(BaseLoop):
         """Iterate one epoch."""
         self.runner.call_hook('before_train_epoch')
         self.runner.model.train()
-        for idx, data_batch in enumerate(self.dataloader):
-            self.run_iter(idx, data_batch)
+        if os.getenv('ENGINE_PERF') is not None:
+            with torch.profiler.profile(
+            activities=[
+                torch.profiler.ProfilerActivity.CPU,
+                torch.profiler.ProfilerActivity.SDAA
+            ],
+            schedule=torch.profiler.schedule(
+                skip_first=0,	# 跳过的step数
+                wait=1,			# 等待的step数
+                warmup=3,       # profiler开始跟踪，但是结果不会被记录，初期易受额外开销影响，
+                active=3,       # 记录次数
+                repeat=1),		# 循环wait + warmup + active，会保存多个json
+                # warmup 和 active 可以多开几次，会默认找时间最小的结果对齐
+            record_shapes=True,	# 一定要开启shape记录
+            on_trace_ready=torch.profiler.tensorboard_trace_handler('./')      # 保存路径
+        ) as p:
+                for idx, data_batch in enumerate(self.dataloader):
+                    self.run_iter(idx, data_batch)
+                    p.step()
+                    if self._iter>7:
+                        break
+        else:
+            for idx, data_batch in enumerate(self.dataloader):
+                self.run_iter(idx, data_batch)
 
         self.runner.call_hook('after_train_epoch')
         self._epoch += 1
