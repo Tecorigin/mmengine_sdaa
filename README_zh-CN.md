@@ -126,6 +126,30 @@ mim install mmengine
 python -c 'from mmengine.utils.dl_utils import collect_env;print(collect_env())'
 ```
 
+安装 MMEngine_sdaa
+
+```bash
+pip3 install git+https://github.com/Tecorigin/mmengine_sdaa.git
+或者
+pip3 install -U openmim
+git clone https://github.com/Tecorigin/mmengine_sdaa.git
+cd mmengine_sdaa 
+mim install .
+```
+
+基于MMEngine_sdaa引擎的算法框架安装
+
+```bash
+以mmpretrain为例：
+pip3 install  -U openmim
+pip3 install git+https://github.com/Tecorigin/mmengine_sdaa.git
+git clone https://github.com/open-mmlab/mmpretrain.git
+pip3 install opencv_python mmcv --no-deps 
+cd mmpretrain
+mim install .
+pip3 install -r requirements.txt
+```
+
 更多安装方式请阅读[安装文档](https://mmengine.readthedocs.io/zh_CN/latest/get_started/installation.html)。
 
 ## 快速上手
