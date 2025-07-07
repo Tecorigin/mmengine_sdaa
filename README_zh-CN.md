@@ -140,12 +140,21 @@ mim install .
 基于MMEngine_sdaa引擎的算法框架安装
 
 ```bash
-以mmpretrain为例：
+1. 以mmpretrain为例：
 pip3 install  -U openmim
 pip3 install git+https://github.com/Tecorigin/mmengine_sdaa.git
 git clone https://github.com/open-mmlab/mmpretrain.git
 pip3 install opencv_python mmcv --no-deps 
 cd mmpretrain
+mim install .
+pip3 install -r requirements.txt
+
+2. 以mmdetection为例：
+pip3 install  -U openmim
+pip3 install git+https://github.com/Tecorigin/mmengine_sdaa.git
+git clone https://github.com/open-mmlab/mmdetection.git
+pip3 install opencv_python mmcv --no-deps 
+cd mmdetection
 mim install .
 pip3 install -r requirements.txt
 ```
