@@ -133,12 +133,21 @@ mim install .
 
 Installation of algorithm frameworks based on MMEngine_sdaa
 ```bash
-Take mmpretrain as an example:
+1. Take mmpretrain as an example:
 pip3 install  -U openmim
 pip3 install git+https://github.com/Tecorigin/mmengine_sdaa.git
 git clone https://github.com/open-mmlab/mmpretrain.git
 pip3 install opencv_python mmcv --no-deps 
 cd mmpretrain
+mim install .
+pip3 install -r requirements.txt
+
+2. Take mmdetection as an example:
+pip3 install  -U openmim
+pip3 install git+https://github.com/Tecorigin/mmengine_sdaa.git
+git clone https://github.com/open-mmlab/mmdetection.git
+pip3 install opencv_python mmcv --no-deps 
+cd mmdetection
 mim install .
 pip3 install -r requirements.txt
 ```
