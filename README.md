@@ -121,6 +121,28 @@ Verify the installation
 python -c 'from mmengine.utils.dl_utils import collect_env;print(collect_env())'
 ```
 
+Install MMEngine_sdaa
+```bash
+pip3 install git+https://github.com/Tecorigin/mmengine_sdaa.git
+or
+pip3 install -U openmim
+git clone https://github.com/Tecorigin/mmengine_sdaa.git
+cd mmengine_sdaa 
+mim install .
+```
+
+Installation of algorithm frameworks based on MMEngine_sdaa
+```bash
+Take mmpretrain as an example:
+pip3 install  -U openmim
+pip3 install git+https://github.com/Tecorigin/mmengine_sdaa.git
+git clone https://github.com/open-mmlab/mmpretrain.git
+pip3 install opencv_python mmcv --no-deps 
+cd mmpretrain
+mim install .
+pip3 install -r requirements.txt
+```
+
 ## Get Started
 
 Taking the training of a ResNet-50 model on the CIFAR-10 dataset as an example, we will use MMEngine to build a complete, configurable training and validation process in less than 80 lines of code.
