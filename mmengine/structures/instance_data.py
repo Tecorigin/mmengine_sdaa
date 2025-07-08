@@ -12,6 +12,7 @@ from .base_data_element import BaseDataElement
 BoolTypeTensor: Union[Any]
 LongTypeTensor: Union[Any]
 
+print("get_device():",get_device())
 if get_device() == 'npu':
     BoolTypeTensor = Union[torch.BoolTensor, torch.npu.BoolTensor]
     LongTypeTensor = Union[torch.LongTensor, torch.npu.LongTensor]
